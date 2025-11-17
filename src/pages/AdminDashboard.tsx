@@ -29,7 +29,7 @@ import {
   FileMetadata,
   StorageInfo,
 } from '@/services/fileService';
-import { getStoragePurchaseHistory, syncStorageQuota } from '@/services/billingService';
+import { getStoragePurchaseHistory } from '@/services/billingService';
 
 const AdminDashboard = () => {
   const { user, signOut } = useAuth();
@@ -123,35 +123,6 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleSyncStorage = async () => {
-    if (!user?.tenantId) return;
-    
-    try {
-      toast({
-        title: "Syncing storage...",
-        description: "Recalculating storage quota from all purchases.",
-      });
-
-      const response = await syncStorageQuota(user.tenantId);
-      
-      if (response.success) {
-        toast({
-          title: "✅ Storage synced successfully!",
-          description: `Processed ${response.purchasesProcessed} purchases. New total: ${response.newTotalGB} GB`,
-        });
-        
-        // Refresh storage data
-        await fetchOrgStats();
-      }
-    } catch (error: any) {
-      console.error('Failed to sync storage:', error);
-      toast({
-        title: "Sync failed",
-        description: error.response?.data?.message || "Could not sync storage. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
 
   const fetchAllOrgFiles = async (folder: string = '/') => {
     if (!user?.tenantId) return;
@@ -673,24 +644,14 @@ const AdminDashboard = () => {
                         )}
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button
-                        onClick={handleSyncStorage}
-                        className="w-full gap-2"
-                        variant="outline"
-                      >
-                        <ArrowUpCircle className="w-4 h-4" />
-                        Sync Storage
-                      </Button>
-                      <Button
-                        onClick={() => setStorageUpgradeOpen(true)}
-                        className="w-full gap-2"
-                        variant="default"
-                      >
-                        <ArrowUpCircle className="w-4 h-4" />
-                        Upgrade Storage
-                      </Button>
-                    </div>
+                    <Button
+                      onClick={() => setStorageUpgradeOpen(true)}
+                      className="w-full gap-2"
+                      variant="default"
+                    >
+                      <ArrowUpCircle className="w-4 h-4" />
+                      Upgrade Storage
+                    </Button>
                   </div>
                 </CardContent>
               </Card>

@@ -1,77 +1,130 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { CheckCircle, Loader2, XCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { completePayment } from '@/services/billingService';
-import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 const PaymentSuccess = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { user } = useAuth();
+  const [status, setStatus] = useState<'processing' | 'success' | 'error'>('processing');
+  const [message, setMessage] = useState('Processing your payment...');
+  const [storageAdded, setStorageAdded] = useState<number>(0);
 
   useEffect(() => {
     const sessionId = searchParams.get('session_id');
-    
-    console.log('🎉 Payment Success Page Loaded');
-    console.log('📋 Session ID:', sessionId);
-    
-    if (sessionId) {
-      handlePaymentCompletion(sessionId);
-    } else {
-      console.error('❌ No session ID in URL');
-      toast({
-        title: "Error",
-        description: "Payment session not found. Redirecting...",
-        variant: "destructive",
-      });
-      setTimeout(() => navigate('/admin/dashboard'), 2000);
+
+    if (!sessionId) {
+      setStatus('error');
+      setMessage('No payment session found');
+      return;
     }
+
+    // Complete the payment on the backend
+    const finalizePayment = async () => {
+      try {
+        console.log('📦 Completing payment for session:', sessionId);
+        const response = await completePayment(sessionId);
+
+        if (response.success) {
+          console.log('✅ Payment completed successfully:', response);
+          setStatus('success');
+          setMessage('Your storage has been upgraded successfully!');
+          setStorageAdded(response.storageAdded || 0);
+
+          // Redirect to dashboard after 3 seconds
+          setTimeout(() => {
+            navigate('/admin/dashboard');
+          }, 3000);
+        } else {
+          throw new Error(response.message || 'Payment completion failed');
+        }
+      } catch (error: any) {
+        console.error('❌ Payment completion error:', error);
+        setStatus('error');
+        setMessage(
+          error.response?.data?.message ||
+          error.message ||
+          'Failed to process your payment. Please contact support.'
+        );
+      }
+    };
+
+    finalizePayment();
   }, [searchParams, navigate]);
 
-  const handlePaymentCompletion = async (sessionId: string) => {
-    try {
-      console.log('💳 Completing payment...');
-      const result = await completePayment(sessionId);
-      
-      if (result.success) {
-        toast({
-          title: "Payment Successful! 🎉",
-          description: `${result.storageAdded} GB has been added to your storage quota.`,
-        });
-        
-        console.log('✅ Payment completed successfully');
-        console.log('📊 Storage added:', result.storageAdded, 'GB');
-        console.log('📊 New quota:', result.newQuotaGB, 'GB');
-        
-        // Redirect to admin dashboard after 2 seconds
-        setTimeout(() => {
-          navigate('/admin/dashboard');
-        }, 2000);
-      }
-    } catch (error: any) {
-      console.error('❌ Payment completion error:', error);
-      toast({
-        title: "Payment Processing Error",
-        description: error.response?.data?.error || "Could not complete payment. Please contact support.",
-        variant: "destructive",
-      });
-      
-      // Still redirect to dashboard after error
-      setTimeout(() => navigate('/admin/dashboard'), 3000);
-    }
-  };
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center space-y-4 p-8 glass-card rounded-lg border-primary/20 max-w-md">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mx-auto"></div>
-        <h1 className="text-2xl font-bold">Processing Payment...</h1>
-        <p className="text-muted-foreground">
-          Please wait while we confirm your payment and update your storage quota.
-        </p>
-      </div>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-primary/5 to-secondary/10 p-4">
+      <Card className="w-full max-w-md glass-card border-primary/20">
+        <CardHeader className="text-center">
+          <div className="mx-auto mb-4">
+            {status === 'processing' && (
+              <Loader2 className="w-16 h-16 text-primary animate-spin" />
+            )}
+            {status === 'success' && (
+              <CheckCircle className="w-16 h-16 text-green-500" />
+            )}
+            {status === 'error' && (
+              <XCircle className="w-16 h-16 text-red-500" />
+            )}
+          </div>
+          <CardTitle className="text-2xl">
+            {status === 'processing' && 'Processing Payment'}
+            {status === 'success' && 'Payment Successful!'}
+            {status === 'error' && 'Payment Error'}
+          </CardTitle>
+          <CardDescription className="text-base mt-2">
+            {message}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="text-center space-y-4">
+          {status === 'success' && storageAdded > 0 && (
+            <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20">
+              <p className="text-sm text-muted-foreground">Storage Added</p>
+              <p className="text-3xl font-bold text-green-500">+{storageAdded} GB</p>
+              <p className="text-xs text-muted-foreground mt-2">
+                Redirecting to dashboard...
+              </p>
+            </div>
+          )}
+
+          {status === 'processing' && (
+            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Please wait while we confirm your payment...
+            </div>
+          )}
+
+          {status === 'error' && (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                If your payment was successful but you're seeing this error, please refresh your dashboard
+                or contact support with your payment details.
+              </p>
+              <Button
+                onClick={() => navigate('/admin/dashboard')}
+                className="w-full"
+              >
+                Go to Dashboard
+              </Button>
+            </div>
+          )}
+
+          {status === 'success' && (
+            <Button
+              onClick={() => navigate('/admin/dashboard')}
+              className="w-full"
+            >
+              Go to Dashboard Now
+            </Button>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
 
 export default PaymentSuccess;
-
