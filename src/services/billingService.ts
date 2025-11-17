@@ -35,6 +35,15 @@ export const completePayment = async (sessionId: string) => {
 };
 
 /**
+ * Manually sync all completed purchases to storage quota
+ * This will recalculate the total storage based on all completed purchases
+ */
+export const syncStorageQuota = async (orgId: string) => {
+  const response = await axios.post(`${API_BASE_URL}/billing/storage/sync/${orgId}`);
+  return response.data;
+};
+
+/**
  * Calculate storage price
  */
 export const calculateStoragePrice = (storageGB: number): number => {
