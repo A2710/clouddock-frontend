@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle, Loader2, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,48 +13,71 @@ const PaymentSuccess = () => {
   const [status, setStatus] = useState<'processing' | 'success' | 'error'>('processing');
   const [message, setMessage] = useState('Processing your payment...');
   const [storageAdded, setStorageAdded] = useState<number>(0);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+
+  // Complete the payment on the backend
+  const finalizePayment = useCallback(async (sid: string) => {
+    try {
+      setStatus('processing');
+      setMessage('Processing your payment...');
+      
+      console.log('📦 Starting payment completion for session:', sid);
+      console.log('🌐 API URL:', `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'}/billing/storage/complete`);
+      
+      const response = await completePayment(sid);
+      
+      console.log('📥 API Response received:', response);
+
+      if (response.success) {
+        console.log('✅ Payment completed successfully:', response);
+        setStatus('success');
+        setMessage('Your storage has been upgraded successfully!');
+        setStorageAdded(response.storageAdded || 0);
+
+        // Redirect to dashboard after 3 seconds
+        setTimeout(() => {
+          console.log('🔄 Redirecting to dashboard...');
+          navigate('/admin/dashboard');
+        }, 3000);
+      } else {
+        console.error('❌ Payment completion failed:', response);
+        throw new Error(response.message || 'Payment completion failed');
+      }
+    } catch (error: any) {
+      console.error('❌ Payment completion error:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+      });
+      
+      setStatus('error');
+      const errorMessage = error.response?.data?.message || 
+                         error.response?.data?.error ||
+                         error.message || 
+                         'Failed to process your payment. Please contact support.';
+      setMessage(errorMessage);
+    }
+  }, [navigate]);
 
   useEffect(() => {
-    const sessionId = searchParams.get('session_id');
+    const sid = searchParams.get('session_id');
 
-    if (!sessionId) {
+    console.log('🔍 PaymentSuccess page loaded');
+    console.log('📋 URL params:', Object.fromEntries(searchParams.entries()));
+    console.log('🔑 Session ID:', sid);
+
+    if (!sid) {
+      console.error('❌ No session_id found in URL');
       setStatus('error');
-      setMessage('No payment session found');
+      setMessage('No payment session found. Please check your payment confirmation email.');
       return;
     }
 
-    // Complete the payment on the backend
-    const finalizePayment = async () => {
-      try {
-        console.log('📦 Completing payment for session:', sessionId);
-        const response = await completePayment(sessionId);
-
-        if (response.success) {
-          console.log('✅ Payment completed successfully:', response);
-          setStatus('success');
-          setMessage('Your storage has been upgraded successfully!');
-          setStorageAdded(response.storageAdded || 0);
-
-          // Redirect to dashboard after 3 seconds
-          setTimeout(() => {
-            navigate('/admin/dashboard');
-          }, 3000);
-        } else {
-          throw new Error(response.message || 'Payment completion failed');
-        }
-      } catch (error: any) {
-        console.error('❌ Payment completion error:', error);
-        setStatus('error');
-        setMessage(
-          error.response?.data?.message ||
-          error.message ||
-          'Failed to process your payment. Please contact support.'
-        );
-      }
-    };
-
-    finalizePayment();
-  }, [searchParams, navigate]);
+    setSessionId(sid);
+    finalizePayment(sid);
+  }, [searchParams, finalizePayment]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-primary/5 to-secondary/10 p-4">
@@ -101,15 +124,26 @@ const PaymentSuccess = () => {
           {status === 'error' && (
             <div className="space-y-3">
               <p className="text-sm text-muted-foreground">
-                If your payment was successful but you're seeing this error, please refresh your dashboard
-                or contact support with your payment details.
+                If your payment was successful but you're seeing this error, please try again or contact support with your payment details.
               </p>
-              <Button
-                onClick={() => navigate('/admin/dashboard')}
-                className="w-full"
-              >
-                Go to Dashboard
-              </Button>
+              <div className="flex gap-2">
+                {sessionId && (
+                  <Button
+                    onClick={() => sessionId && finalizePayment(sessionId)}
+                    className="flex-1"
+                    variant="default"
+                  >
+                    Retry Payment Completion
+                  </Button>
+                )}
+                <Button
+                  onClick={() => navigate('/admin/dashboard')}
+                  className="flex-1"
+                  variant="outline"
+                >
+                  Go to Dashboard
+                </Button>
+              </div>
             </div>
           )}
 
