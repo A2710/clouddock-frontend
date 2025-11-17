@@ -16,6 +16,8 @@ import PaymentSuccess from "./pages/PaymentSuccess";
 import NotFound from "./pages/NotFound";
 import Onboarding from "./pages/Onboarding";
 import Admin from "./pages/Admin";
+import { PlatformAdminLogin } from "./pages/PlatformAdminLogin";
+import { PlatformAdminDashboard } from "./pages/PlatformAdminDashboard";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +34,10 @@ const App = () => (
               {/* Public routes - redirect to dashboard if already logged in */}
               <Route path="/" element={<PublicRoute><Index /></PublicRoute>} />
               <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
+              
+              {/* Platform Admin routes - separate authentication */}
+              <Route path="/platform-admin/login" element={<PlatformAdminLogin />} />
+              <Route path="/platform-admin/dashboard" element={<PlatformAdminDashboard />} />
               
               {/* Protected routes - require authentication */}
               <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
