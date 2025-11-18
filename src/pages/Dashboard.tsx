@@ -576,7 +576,7 @@ const Dashboard = () => {
                       <div className="flex gap-2">
                         {!isSelectionMode ? (
                           <>
-                            <Button
+                            {/*<Button
                               variant="outline"
                               className="glass-card border-primary/20 hover:border-primary/40"
                               onClick={() => setIsSelectionMode(true)}
@@ -584,7 +584,7 @@ const Dashboard = () => {
                             >
                               <CheckSquare className="w-4 h-4 mr-2" />
                               Select
-                            </Button>
+                            </Button>*/}
                             <Button
                               variant="outline"
                               className="glass-card border-primary/20 hover:border-primary/40"
