@@ -91,8 +91,9 @@ const AdminDashboard = () => {
     if (!user?.tenantId) return;
     
     try {
-      console.log('🔄 Fetching storage info for orgId:', user.tenantId);
-      const storage = await getStorageInfo(user.tenantId);
+      console.log('🔄 Fetching storage info for orgId:', user.tenantId, '(Admin - organization-wide)');
+      // Pass isAdmin=true to get organization-wide stats
+      const storage = await getStorageInfo(user.tenantId, undefined, true);
       console.log('📊 Storage info received:', storage);
       console.log('   - Total Quota (bytes):', storage.totalQuota);
       console.log('   - Total Quota (GB):', (storage.totalQuota / (1024 * 1024 * 1024)).toFixed(2));

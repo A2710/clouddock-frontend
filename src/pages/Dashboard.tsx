@@ -650,7 +650,11 @@ const Dashboard = () => {
                   {/* Storage Quota Card */}
                   {user?.tenantId && (
                     <div className="mb-6">
-                      <StorageQuotaCard orgId={user.tenantId} />
+                      <StorageQuotaCard 
+                        orgId={user.tenantId} 
+                        userId={user.id} 
+                        isAdmin={false} 
+                      />
                     </div>
                   )}
 

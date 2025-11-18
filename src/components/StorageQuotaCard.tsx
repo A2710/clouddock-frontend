@@ -6,10 +6,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 interface StorageQuotaCardProps {
   orgId: string;
+  userId?: string; // Optional user ID. If provided and isAdmin is false, shows user-specific stats
+  isAdmin?: boolean; // Whether the requesting user is an admin. If true, shows organization-wide stats
   onStorageUpdate?: (storage: StorageInfo) => void;
 }
 
-export const StorageQuotaCard = ({ orgId, onStorageUpdate }: StorageQuotaCardProps) => {
+export const StorageQuotaCard = ({ orgId, userId, isAdmin = false, onStorageUpdate }: StorageQuotaCardProps) => {
   const [storage, setStorage] = useState<StorageInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -18,7 +20,7 @@ export const StorageQuotaCard = ({ orgId, onStorageUpdate }: StorageQuotaCardPro
     try {
       setLoading(true);
       setError(null);
-      const data = await getStorageInfo(orgId);
+      const data = await getStorageInfo(orgId, userId, isAdmin);
       setStorage(data);
       if (onStorageUpdate) {
         onStorageUpdate(data);
@@ -35,7 +37,7 @@ export const StorageQuotaCard = ({ orgId, onStorageUpdate }: StorageQuotaCardPro
     if (orgId) {
       fetchStorage();
     }
-  }, [orgId]);
+  }, [orgId, userId, isAdmin]);
 
   if (loading) {
     return (

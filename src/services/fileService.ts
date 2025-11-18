@@ -356,10 +356,20 @@ export const getAllOrganizationFilesForAdmin = async (
 };
 
 /**
- * Get storage information for organization
+ * Get storage information for organization or user
+ * @param orgId - Organization ID
+ * @param userId - Optional user ID. If provided and isAdmin is false, returns user-specific stats
+ * @param isAdmin - Whether the requesting user is an admin. If true, returns organization-wide stats
  */
-export const getStorageInfo = async (orgId: string): Promise<StorageInfo> => {
-  const response = await axios.get(`${API_BASE_URL}/files/storage/${orgId}`);
+export const getStorageInfo = async (orgId: string, userId?: string, isAdmin: boolean = false): Promise<StorageInfo> => {
+  const params: any = {};
+  if (userId) {
+    params.userId = userId;
+  }
+  if (isAdmin) {
+    params.isAdmin = 'true';
+  }
+  const response = await axios.get(`${API_BASE_URL}/files/storage/${orgId}`, { params });
   return response.data.storage;
 };
 
