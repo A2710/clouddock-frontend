@@ -30,12 +30,14 @@ export interface FileMetadata {
 export interface StorageInfo {
   orgId: string;
   totalQuota: number;
-  usedStorage: number;
-  availableStorage: number;
-  fileCount: number;
-  usagePercentage: number;
+  usedStorage: number; // Always organization-wide (prevents users from exceeding org limit)
+  availableStorage: number; // Always organization-wide
+  fileCount: number; // User-specific for non-admin, org-wide for admin
+  usagePercentage: number; // Always organization-wide
   isPaidPlan: boolean;
   isQuotaExceeded: boolean;
+  isUserSpecific?: boolean; // Flag to indicate if file count is user-specific
+  userUsedStorage?: number; // User's personal storage contribution (for display only, non-admin users)
 }
 
 export interface UploadResponse {

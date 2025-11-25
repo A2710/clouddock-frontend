@@ -83,11 +83,16 @@ export const StorageQuotaCard = ({ orgId, userId, isAdmin = false, onStorageUpda
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Usage Bar */}
+        {/* Usage Bar - Always shows organization-wide usage */}
         <div className="space-y-2">
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">
               {formatFileSize(storage.usedStorage)} of {formatFileSize(storage.totalQuota)} used
+              {storage.isUserSpecific && storage.userUsedStorage !== undefined && (
+                <span className="ml-2 text-xs">
+                  (Your contribution: {formatFileSize(storage.userUsedStorage)})
+                </span>
+              )}
             </span>
             <span className={`font-semibold ${
               isAtLimit ? 'text-red-500' : 
@@ -112,13 +117,25 @@ export const StorageQuotaCard = ({ orgId, userId, isAdmin = false, onStorageUpda
         {/* Storage Stats */}
         <div className="grid grid-cols-2 gap-4 pt-2">
           <div className="space-y-1">
-            <p className="text-xs text-muted-foreground">Files Stored</p>
+            <p className="text-xs text-muted-foreground">
+              {storage.isUserSpecific ? 'Your Files' : 'Files Stored'}
+            </p>
             <p className="text-2xl font-bold">{storage.fileCount}</p>
+            {storage.isUserSpecific && storage.userUsedStorage !== undefined && (
+              <p className="text-xs text-muted-foreground">
+                (Your storage: {formatFileSize(storage.userUsedStorage)})
+              </p>
+            )}
           </div>
           <div className="space-y-1">
-            <p className="text-xs text-muted-foreground">Available</p>
+            <p className="text-xs text-muted-foreground">
+              Available
+            </p>
             <p className="text-2xl font-bold">
               {formatFileSize(storage.availableStorage)}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {storage.isUserSpecific ? 'Organization-wide' : 'Organization'}
             </p>
           </div>
         </div>
